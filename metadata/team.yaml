@@ -4,16 +4,16 @@
 # - If your team has 4 members: provide all 4 members.
 
 team:
-  team_id: ""
-  name: ""
-  repository: "" # URL of the newly created GitHub repository for this project
+  team_id: "69"
+  name: "The Cyber Paradise"
+  repository: "https://github.com/hasinikyasaram/TheCyberParadise.git"
 
 members:
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
+  - name: "Revanth Undadi"
+    email: "revanthundadi2@gmail.com"
+  - name: "Hasini Kyasaram"
+    email: "hasinikyasaram@gmail.com"
+  - name: "Pranavi Kangari"
+    email: "pranavikangari@gmail.com"
+  - name: "Srikar Gundu"
+    email: "gsrikar24@gmail.com"
