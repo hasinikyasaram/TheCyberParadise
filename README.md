@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Build Secure 24 — Participant Starter Repository
 
 **Abhedya — VBIT Cybersecurity Forum, Vignana Bharathi Institute of Technology, Hyderabad**
@@ -81,7 +80,7 @@ All 4 team members can work simultaneously across separate laptops:
 ---
 
 *Build freely. Use AI freely. Secure what you build. Document what you claim. Prove what you implemented.*
-=======
-# TheCyberParadise
-ShipTrack Sentinel is a secure shipment tracking project that checks user identity, role, and shipment access at every layer, helping prevent unauthorized access to delivery data.
->>>>>>> b87bdb786681bf9f32eda974dc870e35af95d512
+
+# ShipTrack Sentinel (The Cyber Paradise)
+ShipTrack Sentinel is a security-first shipment tracking and management application that strictly proves user identity, role, and shipment-level authorization at every layer, preventing broken access control and data leaks.
+
