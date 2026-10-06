@@ -1,86 +1,38 @@
-# Build Secure 24 — Participant Starter Repository
+# ShipTrack Sentinel
 
-**Abhedya — VBIT Cybersecurity Forum, Vignana Bharathi Institute of Technology, Hyderabad**
+Shipment tracking for three separate roles (customer, delivery partner, administrator). Demo-grade reference build. Do not treat it as production ready.
 
-Welcome to the official Build Secure 24 starter repository.
+## Setup
+1. Node 20 or newer. Run `npm install`.
+2. Copy `.env.example` to `.env`, replace every placeholder, and load it into your shell (the app does not read `.env` by itself).
+3. `npm run seed` creates synthetic users (admin `ops@example.test`, ID `ADM-0001`; partner `rider1@example.test`; customer `+919000000001`). Passwords come from `SEED_ADMIN_PASSWORD` and `SEED_PARTNER_PASSWORD`.
+4. `npm start`, then open http://localhost:3000. For local demos only, set `DEMO_SHOW_CODES=1` to print SMS text (OTP and delivery codes) to the console. The app refuses this when `NODE_ENV=production`.
 
----
+Environment variables: `APP_SECRET` (32+ random characters, signs hashes of tokens, OTPs and delivery codes), `DB_FILE`, `PORT`, `SEED_ADMIN_PASSWORD`, `SEED_PARTNER_PASSWORD`, `DEMO_SHOW_CODES`.
 
-## 1. Challenge Overview
+## Architecture
+Express API (`src/server.js`), SQLite via better-sqlite3 (`src/db.js`), plain HTML/JS front end (`public/`). SMS is a `send(to, message)` stub in `src/index.js`; plug in a real provider there.
+Defense layers: server-side role and object checks on every route; database triggers that enforce the order lifecycle and make the audit table append-only; hashed session tokens, OTPs and delivery codes; per-route rate limits; 10 KB body limit; parameterized queries only.
 
-- **Schedule**: October 5, 2026, 11:00 AM IST to October 6, 2026, 11:00 AM IST
-- **Duration**: Exactly 24 Hours
-- **Submission Deadline**: October 6, 2026, 11:00 AM IST (`2026-10-06T11:00:00+05:30`)
-- **Team Size**: Exactly 2 or 4 participants per team (teams of 1, 3, or >4 are not permitted)
-- **Core Requirement**: All project code must be created live during the 24-hour hackathon. Importing pre-built or third-party repositories is strictly prohibited.
+## Permissions
+| Role | Can | Cannot |
+|---|---|---|
+| Customer | Own orders, status, support chat, notifications | Any other customer's data; any partner or admin route |
+| Partner | Active assigned orders; address only while picked up or out for delivery; status updates; delivery code entry; history (IDs, status, time); ratings | Customer phone, names beyond first name, old addresses, unassigned orders |
+| Admin | Per-permission: `orders` (create, assign, cancel, summary), `support` (inbox, reply), `audit` (read log) | Anything outside granted permissions. Permissions are re-read from the database on each request. |
 
----
+Lifecycle: created, assigned, picked up, out for delivery, delivered; exceptions: failed, cancelled. Delivered can only be reached through the delivery code endpoint.
 
-## 2. Repository Structure
+## Tests
+`npm test` runs `test/security.test.js` (13 tests, in-memory database, real HTTP). Cases cover cross-customer access, partner access limits, admin function and least-privilege checks, invalid and skipped transitions (API and direct DB write), SQL injection and malformed input, OTP expiry, replay and attempt limits, ID enumeration, support chat and audit access, audit immutability, and rate limits.
 
-```
-├── AGENTS.md                  ← AI agent behavioral contract & logging gate
-├── README.md                  ← This file
-├── PARTICIPANT_RULES.md       ← Competition rules
-│
-├── docs/                      ← Autonomous documentation layer
-│   ├── APPROACH.md            ← Problem breakdown & architecture approach
-│   └── logs.txt               ← Turn-by-turn prompt, file location & timeline log
-│
-├── metadata/                  ← Submission metadata
-│   ├── team.yaml              ← Team information (2 or 4 members)
-│   └── submission.yaml        ← Final submission details
-│
-├── src/                       ← Application source code directory
-└── deployment/                ← Deployment configuration directory
-    └── README.md              ← Deployment record
-```
-
----
-
-## 3. Getting Started
-
-### Step 1: Team Registration & GitHub Repository Setup
-1. Create a new GitHub repository for your team's project.
-2. Fill in `metadata/team.yaml` with your assigned Team ID, team name, your newly created GitHub repository URL (`team.repository`), and all 2 or 4 member details.
-
-### Step 2: AI Agent Onboarding
-When you open this repository in an AI coding assistant (Cursor, Windsurf, Claude Code, Copilot, ChatGPT, etc.):
-- The agent will read `AGENTS.md`, greet your team, recite the competition ground rules, display the remaining time until **October 6, 2026, 11:00 AM IST**, and collect your `I agree` confirmation.
-- Once confirmed, the agent records your team details and GitHub repository URL, and configures your Git remote origin.
-- The agent will **automatically log every prompt, the full agent response, the Git commit SHA, exact file changes, and timeline** in `docs/logs.txt` as you build.
-
-### Step 3: Build & Ship with Continuous Push
-- Author your application code inside `src/`.
-- After each prompt, changes are committed with the exact commit SHA recorded in `docs/logs.txt`, and can be pushed directly to your team's GitHub repository (`git push origin main`).
-- Document your technical approach in `docs/APPROACH.md`.
-- Deploy your application and record live details in `deployment/README.md`.
-- Update `metadata/submission.yaml` with your final commit SHA before the **October 6, 2026, 11:00 AM IST** deadline.
-
----
-
-## 4. Multi-Device Team Collaboration
-
-All 4 team members can work simultaneously across separate laptops:
-
-1. **Clone**: Every teammate clones your team's GitHub repository to their device.
-2. **Syncing Progress**:
-   - When one teammate finishes a feature or prompt:
-     ```bash
-     git add src/ docs/
-     git commit -m "feat: implement feature description"
-     git push origin main
-     ```
-   - Other teammates pull the latest updates:
-     ```bash
-     git pull origin main
-     ```
-3. **Agent Continuity**: When a teammate opens the updated repo on their laptop, their AI assistant automatically reads `docs/APPROACH.md` and recent `docs/logs.txt` entries, immediately picking up where the team left off.
-
----
-
-*Build freely. Use AI freely. Secure what you build. Document what you claim. Prove what you implemented.*
-
-# ShipTrack Sentinel (The Cyber Paradise)
-ShipTrack Sentinel is a security-first shipment tracking and management application that strictly proves user identity, role, and shipment-level authorization at every layer, preventing broken access control and data leaks.
-
+## Known limitations
+- Database RLS is not implemented in the running app (SQLite has none). `db/rls.postgres.sql` is a reference policy set that has NOT been run or tested, so no RLS test exists.
+- Administrator multi-factor authentication is not implemented. Add TOTP or WebAuthn before real use.
+- Masked or in-app calling is not implemented; partners simply never receive the phone number.
+- No rating submission flow; the ratings screen only reads existing rows.
+- The daily admin summary is an on-demand endpoint and screen; no scheduler or email sends it.
+- Rate limits are in memory, per process, per IP, and do not survive restarts. Behind a proxy, configure trust settings and a shared store.
+- Provider budget caps and usage alerts depend on the SMS provider you choose; none are configured.
+- No data retention job, TLS termination, CSRF review (bearer tokens in sessionStorage), password reset, account lockout beyond rate limits, or admin UI for managing users. Provision users with the seed script or SQL.
+- Not tested: browser UI behavior, accessibility audits, load, mobile devices, any external service.
